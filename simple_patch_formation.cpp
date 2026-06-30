@@ -476,81 +476,11 @@ WedgeResult run_algorithm(unsigned seed_val) {
 }
 
 // ============================================================================
-// VISUALIZATION & OUTPUT
+// MAIN EXECUTION
 // ============================================================================
-// Custom type-based color scheme matching requirements
-string get_patch_color(int col_idx, int row_idx, PT type) {
-    if (type == PT::SEED) return "#3B82F6"; // Slate Blue for Seeds
-    if (type == PT::COMP) return "#F43F5E"; // Coral Rose for Complementary
-    return "#10B981";                       // Emerald Teal for Tertiary helpers
-}
-
-// Exports the generated wedge cover result into a single vector SVG file
-void export_svg(const WedgeResult& wr, const string& filename) {
-    const int W = 400, H = 750;                               // SVG Canvas size
-    const double ML = 60, MR = 30, MT = 30, MB = 60;          // Margins left, right, top, bottom
-    
-    ofstream out(filename);
-    out << "<svg viewBox=\"0 0 " << W << " " << H << "\" xmlns=\"http://www.w3.org/2000/svg\">\n";
-    out << "<rect width=\"100%\" height=\"100%\" fill=\"white\"/>\n";
-    
-    // Mapping functions to scale coordinates (z1 from [-22, 22] and zL from [-50, 50]) to SVG pixels
-    auto mapping_x = [&](double z1) { return ML + (z1 - (-22.0)) / 44.0 * (W - ML - MR); };
-    auto mapping_y = [&](double zL) { return MT + (50.0 - zL) / 100.0 * (H - MT - MB); };
-    
-    // Draw background grid lines
-    out << "<g stroke=\"#ddd\" stroke-width=\"0.5\" stroke-dasharray=\"2 2\">\n";
-    for (double zL = -40; zL <= 40; zL += 20)
-        out << "<line x1=\"" << ML << "\" y1=\"" << mapping_y(zL) << "\" x2=\"" << W - MR << "\" y2=\"" << mapping_y(zL) << "\"/>\n";
-    for (double z1 = -20; z1 <= 20; z1 += 5)
-        out << "<line x1=\"" << mapping_x(z1) << "\" y1=\"" << MT << "\" x2=\"" << mapping_x(z1) << "\" y2=\"" << H - MB << "\"/>\n";
-    out << "</g>\n";
-    
-    // Draw all calculated patch polygons
-    for (const auto& p : wr.patches) {
-        if (p.poly.empty()) continue;
-        out << "<polygon points=\"";
-        for (const auto& v : p.poly) out << mapping_x(v.x) << "," << mapping_y(v.y) << " ";
-        out << "\" fill=\"" << get_patch_color(p.col_idx, p.row_idx, p.type) << "\" fill-opacity=\"0.85\" stroke=\"none\"/>\n";
-    }
-    
-    // Draw slanted field boundaries representing the luminous region
-    out << "<g stroke=\"black\" stroke-width=\"1.5\">\n";
-    out << "<line x1=\"" << mapping_x(-22.0) << "\" y1=\"" << mapping_y(-50.0) << "\" x2=\"" << mapping_x(-2.0) << "\" y2=\"" << mapping_y(50.0) << "\"/>\n";
-    out << "<line x1=\"" << mapping_x(2.0) << "\" y1=\"" << mapping_y(-50.0) << "\" x2=\"" << mapping_x(22.0) << "\" y2=\"" << mapping_y(50.0) << "\"/>\n";
-    out << "</g>\n";
-    
-    // Draw primary axes lines
-    out << "<g stroke=\"black\" stroke-width=\"1\">\n";
-    out << "<line x1=\"" << ML << "\" y1=\"" << H - MB << "\" x2=\"" << W - MR << "\" y2=\"" << H - MB << "\"/>\n";
-    out << "<line x1=\"" << ML << "\" y1=\"" << MT << "\" x2=\"" << ML << "\" y2=\"" << H - MB << "\"/>\n";
-    out << "</g>\n";
-    
-    // Draw horizontal ticks and labels
-    out << "<g font-family=\"sans-serif\" font-size=\"10\" text-anchor=\"middle\">\n";
-    for (double z1 = -20; z1 <= 20; z1 += 10) {
-        out << "<text x=\"" << mapping_x(z1) << "\" y=\"" << H - MB + 15 << "\">" << (int)z1 << "</text>\n";
-        out << "<line x1=\"" << mapping_x(z1) << "\" y1=\"" << H - MB << "\" x2=\"" << mapping_x(z1) << "\" y2=\"" << H - MB + 4 << "\" stroke=\"black\"/>\n";
-    }
-    out << "<text x=\"" << (ML + W - MR)/2.0 << "\" y=\"" << H - MB + 35 << "\" font-weight=\"bold\">z1 (cm)</text>\n";
-    out << "</g>\n";
-    
-    // Draw vertical ticks and labels
-    out << "<g font-family=\"sans-serif\" font-size=\"10\" text-anchor=\"end\">\n";
-    for (double zL = -40; zL <= 40; zL += 20) {
-        out << "<text x=\"" << ML - 8 << "\" y=\"" << mapping_y(zL) + 4 << "\">" << (int)zL << "</text>\n";
-        out << "<line x1=\"" << ML - 4 << "\" y1=\"" << mapping_y(zL) << "\" x2=\"" << ML << "\" y2=\"" << mapping_y(zL) << "\" stroke=\"black\"/>\n";
-    }
-    out << "<text x=\"" << ML - 25 << "\" y=\"" << (MT + H - MB)/2.0 << "\" transform=\"rotate(-90," << ML - 25 << "," << (MT + H - MB)/2.0 << ")\" font-weight=\"bold\" text-anchor=\"middle\">z_L (cm)</text>\n";
-    out << "</g>\n";
-    
-    out << "</svg>\n";
-}
-
 int main() {
     unsigned test_seed = 42;
     WedgeResult wr = run_algorithm(test_seed);
-    export_svg(wr, "simple_cover.svg");
-    cout << "Wedge cover generated successfully: simple_cover.svg" << endl;
+    cout << "Wedge cover generated successfully for seed " << test_seed << " (Patches: " << wr.patches.size() << ")" << endl;
     return 0;
 }
